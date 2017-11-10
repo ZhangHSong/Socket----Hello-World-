@@ -449,11 +449,10 @@ public class ClientFrame extends JFrame {
 					} else if (infoType.equals("图片")) {
 						objLastName = input.readUTF().toString();
 						startName = input.readUTF().toString();
-						// String endName = input.readUTF();
 						int flag = JOptionPane.showConfirmDialog(null, startName + "请求向你发送图片,是否接受?", "接受",
 								JOptionPane.YES_OPTION, JOptionPane.QUESTION_MESSAGE);
 						if (flag == JOptionPane.YES_OPTION) {
-							File objImage = new File("F:\\image." + objLastName);
+							File objImage = new File("F:\\obj." + objLastName);
 							if (!objImage.exists()) {
 								objImage.createNewFile();
 							}
@@ -468,7 +467,7 @@ public class ClientFrame extends JFrame {
 									break;
 								}
 							}
-							ImageIcon image = new ImageIcon("F:\\image." + objLastName);
+							ImageIcon image = new ImageIcon("F:\\obj." + objLastName);
 							image.setImage(image.getImage().getScaledInstance(120, 120, Image.SCALE_DEFAULT));
 							showImage.setIcon(image);
 							ta.append(f.format(c.getTime()) + "—" + "已经接受了" + startName + "向你发送的图片,存储在"
@@ -478,7 +477,6 @@ public class ClientFrame extends JFrame {
 					} else if (infoType.equals("文件")) {
 						objLastName = input.readUTF().toString();
 						startName = input.readUTF().toString();
-						// String endName = input.readUTF();
 						int flag = JOptionPane.showConfirmDialog(null, startName + "请求向你发送文件,是否接受?", "接受",
 								JOptionPane.YES_OPTION, JOptionPane.QUESTION_MESSAGE);
 						if (flag == JOptionPane.YES_OPTION) {
@@ -492,7 +490,6 @@ public class ClientFrame extends JFrame {
 							while ((len = input.read(buf, 0, buf.length)) != -1) {
 								fOutput.write(buf, 0, len);
 								fOutput.flush();
-								System.out.println(len);
 								if (len < buf.length) {
 									// s.shutdownInput();
 									break;
@@ -505,23 +502,23 @@ public class ClientFrame extends JFrame {
 						}
 					}
 				} catch (EOFException | SocketException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 					disconnect();
 					System.exit(0);
 				} catch (Exception e) {
 					disconnect();
 					System.exit(0);
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 			}
 		}
 
 	}
 
-	/*
+/*	
 	 * 单元测试
-	 */
+	 
 	public static void main(String[] args) {
 		new ClientFrame("test");
-	}
+	}*/
 }

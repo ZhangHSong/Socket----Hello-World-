@@ -40,8 +40,8 @@ public class Node implements Runnable {
 	private Calendar c = null;
 	private SimpleDateFormat f = null;
 	private JTextArea showChatMSG = null;
-	private boolean linked = false;
 	private JLabel showImage;// 显示图片
+	private boolean linked = false;
 	private DefaultTableModel tableModel;
 
 	//
@@ -52,7 +52,8 @@ public class Node implements Runnable {
 	/*
 	 * 构造方法
 	 */
-	public Node(Socket s, ClientLinkList cll, JTextArea showChatMSG, boolean linked, JLabel showImage,DefaultTableModel tableModel) {
+	public Node(Socket s, ClientLinkList cll, JTextArea showChatMSG, boolean linked, JLabel showImage,
+			DefaultTableModel tableModel) {
 
 		this.socket = s;
 		this.cll = cll;
@@ -93,15 +94,13 @@ public class Node implements Runnable {
 			if (str.equals("file")) {
 				output.writeUTF("文件");
 				output.flush();
-			} else {
+			} else if (str.equals("image")) {
 				output.writeUTF("图片");
 				output.flush();
 			}
 			output.writeUTF(objLastName);
 			output.flush();
 			output.writeUTF(startName);
-			output.flush();
-			output.writeUTF(endName);
 			output.flush();
 			fInput = new FileInputStream(file);
 			byte[] sendByte = new byte[1024];
@@ -142,6 +141,18 @@ public class Node implements Runnable {
 				}
 			}
 		}
+		String[] userlists = userlist.split("\n");
+		int m = tableModel.getRowCount();
+		for (int i = m - 1; i >= 0; i--) {
+			tableModel.removeRow(i);
+		}
+		String[] str1 = { "所有人" };
+		tableModel.addRow(str1);
+		for (int i = 0; i < userlists.length; i++) {
+			String[] str3 = { userlists[i] };
+			tableModel.addRow(str3);
+		}
+		tableModel.fireTableDataChanged();
 	}
 
 	public void run() {
@@ -153,105 +164,106 @@ public class Node implements Runnable {
 					sendList();
 					linked = false;
 				}
-				String infoType = input.readUTF().toString();// 信息类型
-				String obj = input.readUTF().toString();
+				if (bConnected) {
+					String infoType = input.readUTF().toString();// 信息类型
+					String obj = input.readUTF().toString();
 
-				if (infoType.equals("聊天信息")) {
-					String str = input.readUTF().toString();
-					showChatMSG.append(f.format(c.getTime()) + "—" + username + "对" + obj + " 说:" + '\n' + str + '\n');
-					if (obj.equalsIgnoreCase("所有人")) {
-						for (int i = 0; i < cll.getClientCount(); i++) {
-							if (!cll.findNodeByIndex(i).username.equals(username))
-								cll.findNodeByIndex(i).sendString(username, obj, str);
-						}
-					} else if (obj.equalsIgnoreCase("服务器")) {
+					if (infoType.equals("聊天信息")) {
+						String str = input.readUTF().toString();
+						showChatMSG
+								.append(f.format(c.getTime()) + "—" + username + "对" + obj + " 说:" + '\n' + str + '\n');
+						if (obj.equalsIgnoreCase("所有人")) {
+							for (int i = 0; i < cll.getClientCount(); i++) {
+								if (!cll.findNodeByIndex(i).username.equals(username))
+									cll.findNodeByIndex(i).sendString(username, obj, str);
+							}
+						} else if (obj.equalsIgnoreCase("服务器")) {
 
-					} else {
-						cll.findNodeByName(obj).sendString(username, obj, str);
-					}
-				} else if (infoType.equals("文件")) {
-					String objLastName = input.readUTF().toString();// 后缀名
-					File objFile = new File("F:\\test." + objLastName);
-					if (!objFile.exists()) {
-						objFile.createNewFile();
-					}
-					fOutput = new FileOutputStream(objFile);
-					byte[] buf = new byte[1024];
-					int len;
-					while ((len = input.read(buf, 0, buf.length)) != -1) {
-						fOutput.write(buf, 0, len);
-						fOutput.flush();
-						System.out.println(len);
-						if (len < buf.length) {
-							// socket.shutdownInput();
-							break;
+						} else {
+							cll.findNodeByName(obj).sendString(username, obj, str);
 						}
-					}
-					showChatMSG.append(f.format(c.getTime()) + "—" + username + "对" + obj + "发送了文件" + '\n');
-					if (obj.equalsIgnoreCase("所有人")) {
-						for (int i = 0; i < cll.getClientCount(); i++) {
-							if (!cll.findNodeByIndex(i).username.equals(username))
-								cll.findNodeByIndex(i).sendFile(username, obj, objFile, "file", objLastName);
+					} else if (infoType.equals("文件")) {
+						String objLastName = input.readUTF().toString();// 后缀名
+						File objFile = new File("F:\\test." + objLastName);
+						if (!objFile.exists()) {
+							objFile.createNewFile();
 						}
-					} else if (obj.equalsIgnoreCase("服务器")) {
+						fOutput = new FileOutputStream(objFile);
+						byte[] buf = new byte[1024];
+						int len;
+						while ((len = input.read(buf, 0, buf.length)) != -1) {
+							fOutput.write(buf, 0, len);
+							fOutput.flush();
+							if (len < buf.length) {
+								// socket.shutdownInput();
+								break;
+							}
+						}
+						showChatMSG.append(f.format(c.getTime()) + "—" + username + "对" + obj + "发送了文件" + '\n');
+						if (obj.equalsIgnoreCase("所有人")) {
+							for (int i = 0; i < cll.getClientCount(); i++) {
+								if (!cll.findNodeByIndex(i).username.equals(username))
+									cll.findNodeByIndex(i).sendFile(username, obj, objFile, "file", objLastName);
+							}
+						} else if (obj.equalsIgnoreCase("服务器")) {
 
-					} else {
-						cll.findNodeByName(obj).sendFile(username, obj, objFile, "file", objLastName);
-					}
-				} else if (infoType.equals("图片")) {
-					String objLastName = input.readUTF().toString();// 后缀名
-					File objImage = new File("F:\\test." + objLastName);
-					if (!objImage.exists()) {
-						objImage.createNewFile();
-					}
-					fOutput = new FileOutputStream(objImage);
-					byte[] buf = new byte[1024];
-					int len;
-					while ((len = input.read(buf, 0, buf.length)) != -1) {
-						fOutput.write(buf, 0, len);
-						fOutput.flush();
-						if (len < buf.length) {
-							// socket.shutdownInput();
-							break;
+						} else {
+							cll.findNodeByName(obj).sendFile(username, obj, objFile, "file", objLastName);
 						}
-					}
-					showChatMSG.append(f.format(c.getTime()) + "—" + username + "对" + obj + "发送了图片" + '\n');
-					ImageIcon image = new ImageIcon("F:\\test." + objLastName);
-					image.setImage(image.getImage().getScaledInstance(120, 120, Image.SCALE_DEFAULT));
-					showImage.setIcon(image);
-					if (obj.equalsIgnoreCase("所有人")) {
-						for (int i = 0; i < cll.getClientCount(); i++) {
-							if (!cll.findNodeByIndex(i).username.equals(username))
-								cll.findNodeByIndex(i).sendFile(username, obj, objImage, "image", objLastName);
+					} else if (infoType.equals("图片")) {
+						String objLastName = input.readUTF().toString();// 后缀名
+						File objImage = new File("F:\\test." + objLastName);
+						if (!objImage.exists()) {
+							objImage.createNewFile();
 						}
-					} else if (obj.equalsIgnoreCase("服务器")) {
+						fOutput = new FileOutputStream(objImage);
+						byte[] buf = new byte[1024];
+						int len;
+						while ((len = input.read(buf, 0, buf.length)) != -1) {
+							fOutput.write(buf, 0, len);
+							fOutput.flush();
+							if (len < buf.length) {
+								// socket.shutdownInput();
+								break;
+							}
+						}
+						showChatMSG.append(f.format(c.getTime()) + "—" + username + "对" + obj + "发送了图片" + '\n');
+						if (obj.equalsIgnoreCase("所有人")) {
+							for (int i = 0; i < cll.getClientCount(); i++) {
+								if (!cll.findNodeByIndex(i).username.equals(username))
+									cll.findNodeByIndex(i).sendFile(username, obj, objImage, "image", objLastName);
+							}
+						} else if (obj.equalsIgnoreCase("服务器")) {
 
-					} else {
-						cll.findNodeByName(obj).sendFile(username, obj, objImage, "image", objLastName);
+						} else {
+							cll.findNodeByName(obj).sendFile(username, obj, objImage, "image", objLastName);
+						}
+						ImageIcon image = new ImageIcon("F:\\test." + objLastName);
+						image.setImage(image.getImage().getScaledInstance(120, 120, Image.SCALE_DEFAULT));
+						showImage.setIcon(image);
+					} else if (infoType.equals("关闭")) {
+						showChatMSG.append(f.format(c.getTime()) + "1客户端" + username + "下线了" + '\n');
+						cll.delNode(username);
+						tableModel.fireTableDataChanged();
+						sendList();
+						bConnected = false;
 					}
-				} else if (infoType.equals("关闭")) {
-					showChatMSG.append(f.format(c.getTime()) + "客户端" + username + "下线了" + '\n');
-					cll.delNode(username);
-					tableModel.fireTableDataChanged();
-					sendList();
-					
 				}
-
 			} catch (EOFException e) {
 				bConnected = false;
-				showChatMSG.append(f.format(c.getTime()) + "客户端" + username + "下线了" + '\n');
+				showChatMSG.append(f.format(c.getTime()) + "2客户端" + username + "下线了" + '\n');
 				cll.delNode(username);
 				tableModel.fireTableDataChanged();
 				sendList();
-				e.printStackTrace();
+				// e.printStackTrace();
 				// System.exit(0);
 			} catch (Exception e) {
 				bConnected = false;
-				showChatMSG.append(f.format(c.getTime()) + "客户端" + username + "下线了" + '\n');
+				showChatMSG.append(f.format(c.getTime()) + "3客户端" + username + "下线了" + '\n');
 				cll.delNode(username);
 				tableModel.fireTableDataChanged();
 				sendList();
-				e.printStackTrace();
+				// e.printStackTrace();
 			}
 		}
 	}
